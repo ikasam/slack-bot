@@ -1,7 +1,6 @@
 require 'bundler/setup'
 require 'slack-ruby-client'
 require 'cgi/escape'
-require 'pp'
 
 TOKEN        = ENV['SLACK_BOT_TOKEN']
 CHANNEL      = ENV['SLACK_CHANNEL'] || '#general'
@@ -28,7 +27,6 @@ end
 
 client.on :message do |data|
   if (not KEYWORD.empty?) and data.channel == CHANNEL_ID
-    pp data
     case data.text
     when /#{KEYWORD}/ then
       client.message channel: data.channel, text: "<!channel> yo!"
