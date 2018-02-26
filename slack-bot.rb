@@ -1,11 +1,10 @@
 require 'bundler/setup'
 require 'slack-ruby-client'
-require 'cgi/escape'
 
 TOKEN        = ENV['SLACK_BOT_TOKEN']
 CHANNEL      = ENV['SLACK_CHANNEL'] || '#general'
 CHANNEL_OPS  = ENV['SLACK_CHANNEL_OPS']
-KEYWORD      = CGI.escapeHTML(ENV['SLACK_KEYWORD'])
+INTERVAL     = (ENV['INTERVAL'] || 15).to_i
 
 Slack.configure do |conf|
   conf.token = TOKEN
@@ -22,16 +21,16 @@ client = Slack::RealTime::Client.new
 client.on :hello do
   BOT_USER_ID    = client.self.id
   puts "Successfully connected, welcome '#{client.self.name}' to the '#{client.team.name}' team at https://#{client.team.domain}.slack.com."
-  client.message channel: CHANNEL_OPS_ID, text: "RTM Connected: keyword=#{KEYWORD} in <##{CHANNEL_ID}>" unless CHANNEL_OPS_ID.nil? or KEYWORD.nil?
+  client.message channel: CHANNEL_OPS_ID, text: "RTM Connected: interval=#{INTERVAL} in <##{CHANNEL_ID}>" unless CHANNEL_OPS_ID.nil? or INTERVAL.nil?
 end
 
 client.on :message do |data|
-  if (not KEYWORD.empty?) and data.channel == CHANNEL_ID
-    case data.text
-    when /#{KEYWORD}/ then
-      client.message channel: data.channel, text: "<!channel> yo!"
-    when /#{BOT_USER_ID}/ then
-      client.message channel: data.channel, text: "<@#{data.user}> Hi."
+  if data.channel == CHANNEL_ID
+    m = /\d+年\d+月\d+日/.match(data.text)
+    reserve_day = Date.strptime(m[0], "%Y年%m月%d日")
+    date_diff = (reserve_day - Date.today).to_i
+    if date_diff <= INTERVAL
+      client.message channel: data.channel, text: "<!channel> #{INTERVAL}日以内の予約です!"
     end
   end
 end
